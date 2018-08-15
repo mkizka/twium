@@ -1,6 +1,6 @@
 from urllib import parse
 
-from .models import User, Status
+from models import User, Status
 
 from bs4 import BeautifulSoup
 
