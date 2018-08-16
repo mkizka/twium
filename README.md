@@ -9,7 +9,8 @@ api = twium.AltApi(
     username='screen_name',
     password='password',
     timeout=30,
-    debug=True)
+    debug=True
+    )
 
 # tweet
 api.tweet('some text')

@@ -1,3 +1,4 @@
+import os
 from urllib import parse
 
 from models import User, Status
@@ -33,7 +34,11 @@ class AltApi:
         options = webdriver.ChromeOptions()
         options.add_argument('--headless')
 
-        self.driver = webdriver.Chrome(options=options)
+        log_path = None
+        if self.debug:
+            log_path = os.path.devnull
+        self.driver = webdriver.Chrome(options=options, service_log_path=log_path)
+
         self._login()
 
     def _login(self):
@@ -48,7 +53,7 @@ class AltApi:
         if self.debug:
             print('ログイン完了')
 
-    def _get(self, path: str, mobile=False):
+    def _get(self, path, mobile=False):
         if mobile:
             url = self.BASE_MOBILE_URL + path
         else:
