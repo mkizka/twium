@@ -44,10 +44,10 @@ class AltApi:
             self._load_cookies()
         except:
             pass
-        if not self.is_authenticated():
+        if not self._is_authenticated():
             self._login()
 
-    def is_authenticated(self):
+    def _is_authenticated(self):
         self._get('/', mobile=True)
         if self.driver.current_url == self.BASE_MOBILE_URL + '/home':
             return True
