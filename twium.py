@@ -95,6 +95,10 @@ class AltApi:
         if self.debug:
             print('フォロー完了')
 
+    def retweet(self, tweet_id):
+        self._get(f'/intent/retweet?tweet_id={str(tweet_id)}')
+        self._submit('#retweet_btn_form')
+
     def search(self, query, screen_name=None):
         if screen_name is not None:
             query += f' from:{screen_name}'
