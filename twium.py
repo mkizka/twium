@@ -64,8 +64,10 @@ class AltApi:
 
         self._write_cookies()
 
-        if self.debug:
+        if self.debug and self._is_authenticated():
             print('ログイン完了')
+        else:
+            raise Exception('ログイン失敗')
 
     def _load_cookies(self):
         self._get('/', mobile=True)
@@ -111,15 +113,9 @@ class AltApi:
         self._get(f'/intent/tweet?text={search_text}')
         self._submit('#update-form')
 
-        if self.debug:
-            print('ツイート完了')
-
     def follow(self, screen_name):
         self._get(f'/intent/follow?screen_name={screen_name}')
         self._submit('#follow_btn_form')
-
-        if self.debug:
-            print('フォロー完了')
 
     def favorite(self, tweet_id):
         self._get(f'/intent/favorite?tweet_id={str(tweet_id)}')
