@@ -88,6 +88,13 @@ class AltApi:
         if self.debug:
             print('ツイート完了')
 
+    def follow(self, screen_name):
+        self._get(f'/intent/follow?screen_name={screen_name}')
+        self._submit('#follow_btn_form')
+
+        if self.debug:
+            print('フォロー完了')
+
     def search(self, query, screen_name=None):
         if screen_name is not None:
             query += f' from:{screen_name}'
