@@ -95,6 +95,10 @@ class AltApi:
         if self.debug:
             print('フォロー完了')
 
+    def favorite(self, tweet_id):
+        self._get(f'/intent/favorite?tweet_id={str(tweet_id)}')
+        self._submit('#favorite_btn_form')
+
     def retweet(self, tweet_id):
         self._get(f'/intent/retweet?tweet_id={str(tweet_id)}')
         self._submit('#retweet_btn_form')
