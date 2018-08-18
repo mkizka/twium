@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from urllib import parse
 
 from models import User, Status
@@ -105,6 +106,9 @@ class AltApi:
     def _input(self, query, value):
         self._query_selector(q=query, action=f'.value = {value}')
 
+    def _scroll_to_bottom(self):
+        self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+
     def _soup(self):
         return BeautifulSoup(self.driver.page_source, 'html.parser')
 
@@ -125,21 +129,34 @@ class AltApi:
         self._get(f'/intent/retweet?tweet_id={str(tweet_id)}')
         self._submit('#retweet_btn_form')
 
-    def search(self, query, screen_name=None):
-        if screen_name is not None:
-            query += f' from:{screen_name}'
+    def search(self, query, scroll_count=0):
         self._get(f'/search?f=tweets&q={query}')
-        self._wait(By.CLASS_NAME, 'tweet')
+        self._wait(By.CLASS_NAME, 'tweet-text')
+
+        for i in range(int(scroll_count) + 1):
+            self._scroll_to_bottom()
+            time.sleep(1)
         soup = self._soup()
 
-        tweets = soup.find_all('div', class_='tweet')
+        stream_items = soup.find_all('div', class_='tweet')
         results = []
-        for tweet in tweets:
+        for item in stream_items:
             try:
-                text = tweet.find('p', class_='tweet-text').text
-                results.append(Status(text=text.replace('\n', '\\n'), user=None))
+                text = item.find('p', class_='tweet-text').text.replace('\n', '\\n')
             except:
-                pass
+                break
+
+            user = User(
+                name=item.attrs['data-name'],
+                screen_name=item.attrs['data-screen-name'],
+                user_id=int(item.attrs['data-user-id'])
+            )
+            tweet = Status(
+                status_id=int(item.attrs['data-tweet-id']),
+                text=text, user=user
+            )
+
+            results.append(tweet)
 
         return results
 
