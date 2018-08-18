@@ -1,4 +1,5 @@
 import os
+import json
 from urllib import parse
 
 from models import User, Status
@@ -39,7 +40,19 @@ class AltApi:
             log_path = os.path.devnull
         self.driver = webdriver.Chrome(options=options, service_log_path=log_path)
 
-        self._login()
+        try:
+            self._load_cookies()
+        except:
+            pass
+        if not self.is_authenticated():
+            self._login()
+
+    def is_authenticated(self):
+        self._get('/', mobile=True)
+        if self.driver.current_url == self.BASE_MOBILE_URL + '/home':
+            return True
+        else:
+            return False
 
     def _login(self):
         self._get('/login', mobile=True)
@@ -47,11 +60,24 @@ class AltApi:
 
         self.driver.find_element_by_name('session[username_or_email]').send_keys(self.username)
         self.driver.find_element_by_name('session[password]').send_keys(self.password)
-
         self._click('[data-testid="login-button"]')
+
+        self._write_cookies()
 
         if self.debug:
             print('ログイン完了')
+
+    def _load_cookies(self):
+        self._get('/', mobile=True)
+        with open('cookies.json', 'r') as f:
+            j = json.load(f)
+        for cookie in j['cookies']:
+            self.driver.add_cookie(cookie)
+
+    def _write_cookies(self):
+        cookies = self.driver.get_cookies()
+        with open('cookies.json', 'w') as f:
+            json.dump({'cookies': cookies}, f)
 
     def _get(self, path, mobile=False):
         if mobile:
