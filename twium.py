@@ -1,4 +1,5 @@
 import os
+import re
 import json
 from urllib import parse
 
@@ -111,10 +112,15 @@ class AltApi:
     def _soup(self):
         return BeautifulSoup(self.driver.page_source, 'html.parser')
 
-    def tweet(self, text):
+    def tweet(self, text, in_reply_to_status_id=None):
         tweet_text = parse.quote(text)
-        self._get(f'/intent/tweet?text={tweet_text}')
+        url = f'/intent/tweet?text={tweet_text}'
+        if in_reply_to_status_id is not None:
+            url += f'&in_reply_to_status_id={str(in_reply_to_status_id)}'
+        self._get(url)
         self._submit('#update-form')
+        # ツイートされたIDを返す
+        return int(re.findall(r'[0-9]+$', self.driver.current_url)[0])
 
     def follow(self, screen_name):
         self._get(f'/intent/follow?screen_name={screen_name}')
