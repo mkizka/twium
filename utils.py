@@ -1,7 +1,9 @@
 from models import User, Status
 
+from bs4 import BeautifulSoup
 
-def tweet_parser(tweet_item):
+
+def tweet_parser(tweet_item: BeautifulSoup):
     try:
         text = tweet_item.find('p', class_='tweet-text').text.replace('\n', '\\n')
     except:

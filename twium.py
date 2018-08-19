@@ -113,8 +113,8 @@ class AltApi:
         return BeautifulSoup(self.driver.page_source, 'html.parser')
 
     def tweet(self, text):
-        search_text = parse.quote(text)
-        self._get(f'/intent/tweet?text={search_text}')
+        tweet_text = parse.quote(text)
+        self._get(f'/intent/tweet?text={tweet_text}')
         self._submit('#update-form')
 
     def follow(self, screen_name):
@@ -129,8 +129,9 @@ class AltApi:
         self._get(f'/intent/retweet?tweet_id={str(tweet_id)}')
         self._submit('#retweet_btn_form')
 
-    def search(self, query, scroll_count=0):
-        self._get(f'/search?f=tweets&q={query}')
+    def search(self, term, scroll_count=0):
+        search_term = parse.quote(term)
+        self._get(f'/search?f=tweets&q={search_term}')
         self._wait(By.CLASS_NAME, 'tweet-text')
 
         for i in range(int(scroll_count) + 1):
