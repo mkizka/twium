@@ -3,7 +3,7 @@ import json
 import time
 from urllib import parse
 
-from models import User, Status
+from utils import tweet_parser
 
 from bs4 import BeautifulSoup
 
@@ -138,24 +138,12 @@ class AltApi:
             time.sleep(1)
         soup = self._soup()
 
-        stream_items = soup.find_all('div', class_='tweet')
+        tweets = soup.find_all('div', class_='tweet')
         results = []
-        for item in stream_items:
-            try:
-                text = item.find('p', class_='tweet-text').text.replace('\n', '\\n')
-            except:
+        for tweet_item in tweets:
+            tweet = tweet_parser(tweet_item)
+            if not tweet:
                 break
-
-            user = User(
-                name=item.attrs['data-name'],
-                screen_name=item.attrs['data-screen-name'],
-                user_id=int(item.attrs['data-user-id'])
-            )
-            tweet = Status(
-                status_id=int(item.attrs['data-tweet-id']),
-                text=text, user=user
-            )
-
             results.append(tweet)
 
         return results
