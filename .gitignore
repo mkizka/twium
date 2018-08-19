@@ -1,4 +1,5 @@
 .idea
 temp.py
 __pycache__
-cookies.json
+cookies/*
+!.gitkeep

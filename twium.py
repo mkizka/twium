@@ -12,6 +12,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 class AltApi:
     username = None
@@ -72,14 +74,14 @@ class AltApi:
 
     def _load_cookies(self):
         self._get('/', mobile=True)
-        with open('cookies.json', 'r') as f:
+        with open(os.path.join(BASE_DIR, 'cookies', f'{self.username}.json'), 'r') as f:
             j = json.load(f)
         for cookie in j['cookies']:
             self.driver.add_cookie(cookie)
 
     def _write_cookies(self):
         cookies = self.driver.get_cookies()
-        with open('cookies.json', 'w') as f:
+        with open(os.path.join(BASE_DIR, 'cookies', f'{self.username}.json'), 'w') as f:
             json.dump({'cookies': cookies}, f)
 
     def _get(self, path, mobile=False):
