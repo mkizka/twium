@@ -1,5 +1,6 @@
 from models import User, Status
 
+from selenium import webdriver
 from bs4 import BeautifulSoup
 
 
@@ -19,3 +20,7 @@ def tweet_parser(tweet_item: BeautifulSoup):
         text=text, user=user
     )
     return tweet
+
+
+def driver2soup(driver: webdriver):
+    return BeautifulSoup(driver.page_source, 'html.parser')

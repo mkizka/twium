@@ -1,9 +1,8 @@
 import os
 import json
-import time
 from urllib import parse
 
-from utils import tweet_parser
+from utils import tweet_parser, driver2soup
 
 from bs4 import BeautifulSoup
 
@@ -134,11 +133,18 @@ class AltApi:
         self._get(f'/search?f=tweets&q={search_term}')
         self._wait(By.CLASS_NAME, 'tweet-text')
 
-        for i in range(int(scroll_count) + 1):
+        for i in range(int(scroll_count)):
             self._scroll_to_bottom()
-            time.sleep(1)
-        soup = self._soup()
 
+            # 取得できるツイート数に変化があるまで待機
+            _prev_count = len(self._soup().find_all('div', class_='tweet'))
+            WebDriverWait(self.driver, self.timeout).until_not(
+                lambda d: len(driver2soup(d).find_all('div', class_='tweet')) == _prev_count
+            )
+            if self.debug:
+                print('ウェイト通過')
+
+        soup = self._soup()
         tweets = soup.find_all('div', class_='tweet')
         results = []
         for tweet_item in tweets:
