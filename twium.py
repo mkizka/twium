@@ -3,7 +3,7 @@ import re
 import json
 from urllib import parse
 
-from utils import tweet_parser, driver2soup
+from utils import tweet_parser, activity_parser, driver2soup
 
 from bs4 import BeautifulSoup
 
@@ -176,6 +176,32 @@ class AltApi:
             if not tweet:
                 break
             results.append(tweet)
+
+        return results
+
+    def notification(self, scroll_count=0):
+        self._get('/i/notifications')
+        self._wait(By.CLASS_NAME, 'js-activity')
+
+        for i in range(int(scroll_count)):
+            self._scroll_to_bottom()
+
+            # 取得できるツイート数に変化があるまで待機
+            _prev_count = len(self._soup().find_all('div', class_='js-activity'))
+            WebDriverWait(self.driver, self.timeout).until_not(
+                lambda d: len(driver2soup(d).find_all('div', class_='js-activity')) == _prev_count
+            )
+            if self.debug:
+                print('ウェイト通過')
+
+        soup = self._soup()
+        activities = soup.find_all('li', class_='js-activity')
+        results = []
+        for activity in activities:
+            notify = activity_parser(activity)
+            if not notify:
+                break
+            results.append(notify)
 
         return results
 
