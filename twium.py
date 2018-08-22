@@ -157,16 +157,7 @@ class AltApi:
         return self._scrape_tweets(scroll_count)
 
     def _scrape_tweets(self, scroll_count):
-        for i in range(int(scroll_count)):
-            self._scroll_to_bottom()
-
-            # 取得できるツイート数に変化があるまで待機
-            _prev_count = len(self._soup().find_all('div', class_='tweet'))
-            WebDriverWait(self.driver, self.timeout).until_not(
-                lambda d: len(driver2soup(d).find_all('div', class_='tweet')) == _prev_count
-            )
-            if self.debug:
-                print('ウェイト通過')
+        self._safe_scroll(scroll_count, 'div', class_='tweet')
 
         soup = self._soup()
         tweets = soup.find_all('div', class_='tweet')
@@ -179,20 +170,23 @@ class AltApi:
 
         return results
 
+    def _safe_scroll(self, count, *args, **kwargs):
+        for i in range(int(count)):
+            self._scroll_to_bottom()
+
+            # 取得できるツイート数に変化があるまで待機
+            _prev_count = len(self._soup().find_all(*args, **kwargs))
+            WebDriverWait(self.driver, self.timeout).until_not(
+                lambda d: len(driver2soup(d).find_all(*args, **kwargs)) == _prev_count
+            )
+            if self.debug:
+                print('ウェイト通過')
+
     def notification(self, scroll_count=0):
         self._get('/i/notifications')
         self._wait(By.CLASS_NAME, 'js-activity')
 
-        for i in range(int(scroll_count)):
-            self._scroll_to_bottom()
-
-            # 取得できるツイート数に変化があるまで待機
-            _prev_count = len(self._soup().find_all('div', class_='js-activity'))
-            WebDriverWait(self.driver, self.timeout).until_not(
-                lambda d: len(driver2soup(d).find_all('div', class_='js-activity')) == _prev_count
-            )
-            if self.debug:
-                print('ウェイト通過')
+        self._safe_scroll(scroll_count, 'li', class_='js-activity')
 
         soup = self._soup()
         activities = soup.find_all('li', class_='js-activity')

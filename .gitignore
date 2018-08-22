@@ -3,3 +3,4 @@ temp.py
 __pycache__
 cookies/*
 !.gitkeep
+*.log
