@@ -36,7 +36,8 @@ class AltApi:
 
     def _start(self):
         options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
+        if not self.debug:
+            options.add_argument('--headless')
 
         log_path = None
         if self.debug:
@@ -141,6 +142,15 @@ class AltApi:
         self._get(f'/search?f=tweets&q={search_term}')
         self._wait(By.CLASS_NAME, 'tweet-text')
 
+        return self._scrape_tweets(scroll_count)
+
+    def timeline(self, scroll_count):
+        self._get('/')
+        self._wait(By.CLASS_NAME, 'tweet-text')
+
+        return self._scrape_tweets(scroll_count)
+
+    def _scrape_tweets(self, scroll_count):
         for i in range(int(scroll_count)):
             self._scroll_to_bottom()
 
