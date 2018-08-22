@@ -101,6 +101,7 @@ class AltApi:
         self.driver.execute_script(f"document.querySelector('{q}'){action}")
 
     def _click(self, query):
+        self._wait(By.CSS_SELECTOR, query)
         self._query_selector(q=query, action='.click()')
 
     def _submit(self, query):
@@ -124,6 +125,11 @@ class AltApi:
         self._submit('#update-form')
         # ツイートされたIDを返す
         return int(re.findall(r'[0-9]+$', self.driver.current_url)[0])
+
+    def del_tweet(self, tweet_id):
+        self._get(f'/{self.username}/status/{str(tweet_id)}')
+        self._click('.js-actionDelete button')
+        self._click('.delete-action')
 
     def follow(self, screen_name):
         self._get(f'/intent/follow?screen_name={screen_name}')
