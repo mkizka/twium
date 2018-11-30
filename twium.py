@@ -68,8 +68,9 @@ class AltApi:
 
         self._write_cookies()
 
-        if self.debug and self._is_authenticated():
-            print('ログイン完了')
+        if self._is_authenticated():
+            if self.debug:
+                print('ログイン完了')
         else:
             raise Exception('ログイン失敗')
 

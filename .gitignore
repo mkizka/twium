@@ -1,4 +1,5 @@
 .idea
+.venv
 temp.py
 __pycache__
 cookies/*
