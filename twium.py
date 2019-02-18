@@ -136,6 +136,10 @@ class AltApi:
         self._get(f'/intent/follow?screen_name={screen_name}')
         self._submit('#follow_btn_form')
 
+    def unfollow(self, screen_name):
+        self._get(f'/intent/follow?screen_name={screen_name}')
+        self._submit('form.unfollow')
+
     def favorite(self, tweet_id):
         self._get(f'/intent/favorite?tweet_id={str(tweet_id)}')
         self._submit('#favorite_btn_form')
