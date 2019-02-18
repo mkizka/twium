@@ -16,18 +16,14 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class AltApi:
-    username = None
-    password = None
-    driver = None
-    timeout = 10
-    debug = False
+    username = ''
+    password = ''
+    is_authenticated = False
 
     BASE_URL = 'https://twitter.com'
     BASE_MOBILE_URL = 'https://mobile.twitter.com'
 
-    def __init__(self, username, password, timeout=None, debug=False):
-        self.username = username
-        self.password = password
+    def __init__(self, timeout=10, debug=False):
         self.debug = debug
         if timeout is not None:
             self.timeout = timeout
@@ -40,50 +36,48 @@ class AltApi:
             options.add_argument('--headless')
 
         log_path = None
-        if self.debug:
+        if not self.debug:
             log_path = os.path.devnull
         self.driver = webdriver.Chrome(options=options, service_log_path=log_path)
-
-        try:
-            self._load_cookies()
-        except:
-            pass
-        if not self._is_authenticated():
-            self._login()
 
     def _is_authenticated(self):
         self._get('/', mobile=True)
         if self.driver.current_url == self.BASE_MOBILE_URL + '/home':
-            return True
+            self.is_authenticated = True
+            self.username = self._get_username()
         else:
-            return False
+            self.is_authenticated = False
+        return self.is_authenticated
 
-    def _login(self):
+    def _get_username(self):
+        self._get('/')
+        return self._soup().find('b', class_='u-linkComplex-target').text
+
+    def auth(self, username, password):
         self._get('/login', mobile=True)
         self._wait(By.TAG_NAME, 'input')
 
-        self.driver.find_element_by_name('session[username_or_email]').send_keys(self.username)
-        self.driver.find_element_by_name('session[password]').send_keys(self.password)
+        self.driver.find_element_by_name('session[username_or_email]').send_keys(username)
+        self.driver.find_element_by_name('session[password]').send_keys(password)
         self._click('[data-testid="login-button"]')
 
-        self._write_cookies()
-
-        if self._is_authenticated():
-            if self.debug:
-                print('ログイン完了')
-        else:
+        if not self._is_authenticated():
             raise Exception('ログイン失敗')
 
-    def _load_cookies(self):
+    def load_cookies(self, filepath):
         self._get('/', mobile=True)
-        with open(os.path.join(BASE_DIR, 'cookies', f'{self.username}.json'), 'r') as f:
+
+        with open(filepath, 'r') as f:
             j = json.load(f)
         for cookie in j['cookies']:
             self.driver.add_cookie(cookie)
 
-    def _write_cookies(self):
+        if not self._is_authenticated():
+            raise Exception('ログイン失敗')
+
+    def write_cookies(self, filepath):
         cookies = self.driver.get_cookies()
-        with open(os.path.join(BASE_DIR, 'cookies', f'{self.username}.json'), 'w') as f:
+        with open(filepath, 'w') as f:
             json.dump({'cookies': cookies}, f)
 
     def _get(self, path, mobile=False):
@@ -155,11 +149,28 @@ class AltApi:
 
         return self._scrape_tweets(scroll_count)
 
-    def timeline(self, scroll_count):
+    def timeline(self, scroll_count=0):
         self._get('/')
         self._wait(By.CLASS_NAME, 'tweet-text')
 
         return self._scrape_tweets(scroll_count)
+
+    def notification(self, scroll_count=0):
+        self._get('/i/notifications')
+        self._wait(By.CLASS_NAME, 'js-activity')
+
+        self._safe_scroll(scroll_count, 'li', class_='js-activity')
+
+        soup = self._soup()
+        activities = soup.find_all('li', class_='js-activity')
+        results = []
+        for activity in activities:
+            notify = activity_parser(activity)
+            if not notify:
+                break
+            results.append(notify)
+
+        return results
 
     def _scrape_tweets(self, scroll_count):
         self._safe_scroll(scroll_count, 'div', class_='tweet')
@@ -186,23 +197,6 @@ class AltApi:
             )
             if self.debug:
                 print('ウェイト通過')
-
-    def notification(self, scroll_count=0):
-        self._get('/i/notifications')
-        self._wait(By.CLASS_NAME, 'js-activity')
-
-        self._safe_scroll(scroll_count, 'li', class_='js-activity')
-
-        soup = self._soup()
-        activities = soup.find_all('li', class_='js-activity')
-        results = []
-        for activity in activities:
-            notify = activity_parser(activity)
-            if not notify:
-                break
-            results.append(notify)
-
-        return results
 
     def __del__(self):
         self.driver.close()
