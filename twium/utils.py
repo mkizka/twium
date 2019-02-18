@@ -1,4 +1,4 @@
-from models import User, Status, Notify
+from twium.models import User, Status, Notify
 
 from selenium import webdriver
 from bs4 import BeautifulSoup

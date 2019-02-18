@@ -1,6 +1,11 @@
 # twium
 Seleniumを使ったpython-twitter風ラッパー
 
+## Install
+```bash
+pip install git+https://github.com/Compeito/twium
+```
+
 ## Usage
 ```python
 import twium

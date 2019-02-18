@@ -3,7 +3,7 @@ import re
 import json
 from urllib import parse
 
-from utils import tweet_parser, activity_parser, driver2soup
+from twium.utils import tweet_parser, activity_parser, driver2soup
 
 from bs4 import BeautifulSoup
 
