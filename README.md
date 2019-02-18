@@ -13,9 +13,10 @@ api = twium.AltApi()
 
 # login
 api.auth('username', 'password')
+api.write_cookies('path/to/cookie.json')
 
 # or use cookie
-api.write_cookies('path/to/cookie.json')
+api.load_cookies('path/to/cookie.json')
 
 
 # methods
