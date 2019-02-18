@@ -42,11 +42,14 @@ class AltApi:
 
     def _is_authenticated(self):
         self._get('/', mobile=True)
-        if self.driver.current_url == self.BASE_MOBILE_URL + '/home':
-            self.is_authenticated = True
+
+        try:
+            self._wait(lambda x: self.driver.current_url == self.BASE_MOBILE_URL + '/home')
             self.username = self._get_username()
-        else:
+            self.is_authenticated = True
+        except:
             self.is_authenticated = False
+
         return self.is_authenticated
 
     def _get_username(self):
