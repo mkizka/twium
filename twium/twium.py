@@ -55,7 +55,7 @@ class AltApi:
 
     def auth(self, username, password):
         self._get('/login', mobile=True)
-        self._wait(By.TAG_NAME, 'input')
+        self._wait((By.TAG_NAME, 'input'))
 
         self.driver.find_element_by_name('session[username_or_email]').send_keys(username)
         self.driver.find_element_by_name('session[password]').send_keys(password)
@@ -87,16 +87,16 @@ class AltApi:
             url = self.BASE_URL + path
         return self.driver.get(url)
 
-    def _wait(self, by, value):
-        WebDriverWait(self.driver, self.timeout).until(
-            EC.presence_of_element_located((by, value))
-        )
+    def _wait(self, condition):
+        if type(condition) is tuple:
+            condition = EC.presence_of_element_located(condition)
+        WebDriverWait(self.driver, self.timeout).until(condition)
 
     def _query_selector(self, q, action):
         self.driver.execute_script(f"document.querySelector('{q}'){action}")
 
     def _click(self, query):
-        self._wait(By.CSS_SELECTOR, query)
+        self._wait((By.CSS_SELECTOR, query))
         self._query_selector(q=query, action='.click()')
 
     def _submit(self, query):
@@ -145,19 +145,19 @@ class AltApi:
     def search(self, term, scroll_count=0):
         search_term = parse.quote(term)
         self._get(f'/search?f=tweets&q={search_term}')
-        self._wait(By.CLASS_NAME, 'tweet-text')
+        self._wait((By.CLASS_NAME, 'tweet-text'))
 
         return self._scrape_tweets(scroll_count)
 
     def timeline(self, scroll_count=0):
         self._get('/')
-        self._wait(By.CLASS_NAME, 'tweet-text')
+        self._wait((By.CLASS_NAME, 'tweet-text'))
 
         return self._scrape_tweets(scroll_count)
 
     def notification(self, scroll_count=0):
         self._get('/i/notifications')
-        self._wait(By.CLASS_NAME, 'js-activity')
+        self._wait((By.CLASS_NAME, 'js-activity'))
 
         self._safe_scroll(scroll_count, 'li', class_='js-activity')
 
