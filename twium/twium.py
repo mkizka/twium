@@ -129,12 +129,22 @@ class AltApi:
         self._click('.js-actionDelete button')
         self._click('.delete-action')
 
-    def follow(self, screen_name):
-        self._get(f'/intent/follow?screen_name={screen_name}')
+    def _get_user_intent(self, user_id=None, screen_name=None):
+        url = '/intent/user?'
+        if user_id:
+            url += f'user_id={str(user_id)}'
+        elif screen_name:
+            url += f'screen_name={screen_name}'
+        else:
+            return
+        self._get(url)
+
+    def follow(self, user_id=None, screen_name=None):
+        self._get_user_intent(user_id, screen_name)
         self._submit('#follow_btn_form')
 
-    def unfollow(self, screen_name):
-        self._get(f'/intent/follow?screen_name={screen_name}')
+    def unfollow(self, user_id=None, screen_name=None):
+        self._get_user_intent(user_id, screen_name)
         self._submit('form.unfollow')
 
     def favorite(self, tweet_id):
