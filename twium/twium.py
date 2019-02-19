@@ -16,8 +16,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class AltApi:
-    username = ''
-    password = ''
     is_authenticated = False
 
     BASE_URL = 'https://twitter.com'
@@ -25,8 +23,7 @@ class AltApi:
 
     def __init__(self, timeout=10, debug=False):
         self.debug = debug
-        if timeout is not None:
-            self.timeout = timeout
+        self.timeout = timeout
 
         self._start()
 
@@ -45,16 +42,11 @@ class AltApi:
 
         try:
             self._wait(lambda x: self.driver.current_url == self.BASE_MOBILE_URL + '/home')
-            self.username = self._get_username()
             self.is_authenticated = True
         except:
             self.is_authenticated = False
 
         return self.is_authenticated
-
-    def _get_username(self):
-        self._get('/')
-        return self._soup().find('b', class_='u-linkComplex-target').text
 
     def auth(self, username, password):
         self._get('/login', mobile=True)
@@ -125,7 +117,7 @@ class AltApi:
         return int(re.findall(r'[0-9]+$', self.driver.current_url)[0])
 
     def del_tweet(self, tweet_id):
-        self._get(f'/{self.username}/status/{str(tweet_id)}')
+        self._get(f'/-/status/{str(tweet_id)}')
         self._click('.js-actionDelete button')
         self._click('.delete-action')
 
