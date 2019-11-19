@@ -1,16 +1,15 @@
+import json
 import os
 import re
-import json
 from urllib import parse
 
-from twium.utils import tweet_parser, activity_parser, driver2soup
-
 from bs4 import BeautifulSoup
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+from twium.utils import tweet_parser, activity_parser, driver2soup
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -50,11 +49,11 @@ class AltApi:
 
     def auth(self, username, password):
         self._get('/login', mobile=True)
-        self._wait((By.TAG_NAME, 'input'))
+        self._wait((By.NAME, 'session[username_or_email]'))
 
         self.driver.find_element_by_name('session[username_or_email]').send_keys(username)
         self.driver.find_element_by_name('session[password]').send_keys(password)
-        self._click('[data-testid="login-button"]')
+        self._click('[data-testid=LoginForm_Login_Button]')
 
         if not self._is_authenticated():
             raise Exception('ログイン失敗')
@@ -65,6 +64,9 @@ class AltApi:
         with open(filepath, 'r') as f:
             j = json.load(f)
         for cookie in j['cookies']:
+            # Seleniumの実装の都合上expiryの形式が異なる
+            if 'expiry' in cookie.keys():
+                cookie['expiry'] = int(cookie['expiry'])
             self.driver.add_cookie(cookie)
 
         if not self._is_authenticated():
