@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "twium"
+version = "0.1.0"
+description = ""
+authors = ["'Compeito' <'compeitoon@gmail.com'>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+selenium = "^3.141"
+beautifulsoup4 = "^4.8"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
