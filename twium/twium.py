@@ -86,14 +86,14 @@ class AltApi:
 
     def _wait(self, condition):
         if type(condition) is tuple:
-            condition = EC.presence_of_element_located(condition)
+            condition = EC.visibility_of_element_located(condition)
         WebDriverWait(self.driver, self.timeout).until(condition)
 
     def _query_selector(self, q, action):
+        self._wait((By.CSS_SELECTOR, q))
         self.driver.execute_script(f"document.querySelector('{q}'){action}")
 
     def _click(self, query):
-        self._wait((By.CSS_SELECTOR, query))
         self._query_selector(q=query, action='.click()')
 
     def _submit(self, query):
@@ -135,7 +135,7 @@ class AltApi:
 
     def follow(self, user_id=None, screen_name=None):
         self._get_user_intent(user_id, screen_name)
-        self._submit('#follow_btn_form')
+        self._submit('form.follow')
 
     def unfollow(self, user_id=None, screen_name=None):
         self._get_user_intent(user_id, screen_name)
