@@ -8,6 +8,7 @@ authors = ["'Compeito' <'compeitoon@gmail.com'>"]
 python = "^3.7"
 selenium = "^3.141"
 beautifulsoup4 = "^4.8"
+requests = "^2.22"
 
 [tool.poetry.dev-dependencies]
 
