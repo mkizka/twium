@@ -1,32 +1,35 @@
+import datetime
+from typing import Dict
+
 import dateutil.parser
 
 
 class Tweet:
     def __init__(self, tweet: dict):
-        self.created_at = dateutil.parser.parse(tweet['created_at'])
-        self.id = tweet['id']
-        self.id_str = tweet['id_str']
-        self.text = tweet['text']
-        self.truncated = tweet['truncated']
-        self.entities = tweet['entities']
-        self.source = tweet['source']
-        self.in_reply_to_status_id = tweet['in_reply_to_status_id']
-        self.in_reply_to_status_id_str = tweet['in_reply_to_status_id_str']
-        self.in_reply_to_user_id = tweet['in_reply_to_user_id']
-        self.in_reply_to_user_id_str = tweet['in_reply_to_user_id_str']
-        self.in_reply_to_screen_name = tweet['in_reply_to_screen_name']
-        self.user_id = tweet['user_id']
-        self.user_id_str = tweet['user_id_str']
+        self.created_at: datetime.datetime = dateutil.parser.parse(tweet['created_at'])
+        self.id: int = tweet['id']
+        self.id_str: str = tweet['id_str']
+        self.text: str = tweet['text']
+        self.truncated: bool = tweet['truncated']
+        self.entities: Dict[str, list] = tweet['entities']
+        self.source: str = tweet['source']
+        self.in_reply_to_status_id: int = tweet['in_reply_to_status_id']
+        self.in_reply_to_status_id_str: str = tweet['in_reply_to_status_id_str']
+        self.in_reply_to_user_id: int = tweet['in_reply_to_user_id']
+        self.in_reply_to_user_id_str: str = tweet['in_reply_to_user_id_str']
+        self.in_reply_to_screen_name: str = tweet['in_reply_to_screen_name']
+        self.user_id: int = tweet['user_id']
+        self.user_id_str: str = tweet['user_id_str']
         self.geo = tweet['geo']
         self.coordinates = tweet['coordinates']
         self.place = tweet['place']
         self.contributors = tweet['contributors']
-        self.is_quote_status = tweet['is_quote_status']
-        self.retweet_count = tweet['retweet_count']
-        self.favorite_count = tweet['favorite_count']
-        self.conversation_id = tweet['conversation_id']
-        self.conversation_id_str = tweet['conversation_id_str']
-        self.favorited = tweet['favorited']
-        self.retweeted = tweet['retweeted']
-        self.lang = tweet['lang']
+        self.is_quote_status: bool = tweet['is_quote_status']
+        self.retweet_count: int = tweet['retweet_count']
+        self.favorite_count: int = tweet['favorite_count']
+        self.conversation_id: int = tweet['conversation_id']
+        self.conversation_id_str: str = tweet['conversation_id_str']
+        self.favorited: bool = tweet['favorited']
+        self.retweeted: bool = tweet['retweeted']
+        self.lang: str = tweet['lang']
         self.supplemental_language = tweet['supplemental_language']
