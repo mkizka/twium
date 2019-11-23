@@ -3,19 +3,20 @@ import os
 import re
 from urllib import parse
 
-from bs4 import BeautifulSoup
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from twium.utils import tweet_parser, activity_parser, driver2soup
+from search import SearchManager
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class AltApi:
     is_authenticated = False
+    search_manager: SearchManager = None
 
     BASE_URL = 'https://twitter.com'
     BASE_MOBILE_URL = 'https://mobile.twitter.com'
@@ -102,11 +103,11 @@ class AltApi:
     def _input(self, query, value):
         self._query_selector(q=query, action=f'.value = {value}')
 
-    def _scroll_to_bottom(self):
-        self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-
-    def _soup(self):
-        return BeautifulSoup(self.driver.page_source, 'html.parser')
+    def get_session(self):
+        session = requests.session()
+        for cookie in self.driver.get_cookies():
+            session.cookies.set(cookie['name'], cookie['value'])
+        return session
 
     def tweet(self, text, in_reply_to_status_id=None):
         tweet_text = parse.quote(text)
@@ -149,61 +150,12 @@ class AltApi:
         self._get(f'/intent/retweet?tweet_id={str(tweet_id)}')
         self._submit('#retweet_btn_form')
 
-    def search(self, term, scroll_count=0):
-        search_term = parse.quote(term)
-        self._get(f'/search?f=tweets&q={search_term}')
-        self._wait((By.CLASS_NAME, 'tweet-text'))
-
-        return self._scrape_tweets(scroll_count)
-
-    def timeline(self, scroll_count=0):
-        self._get('/')
-        self._wait((By.CLASS_NAME, 'tweet-text'))
-
-        return self._scrape_tweets(scroll_count)
-
-    def notification(self, scroll_count=0):
-        self._get('/i/notifications')
-        self._wait((By.CLASS_NAME, 'js-activity'))
-
-        self._safe_scroll(scroll_count, 'li', class_='js-activity')
-
-        soup = self._soup()
-        activities = soup.find_all('li', class_='js-activity')
-        results = []
-        for activity in activities:
-            notify = activity_parser(activity)
-            if not notify:
-                break
-            results.append(notify)
-
-        return results
-
-    def _scrape_tweets(self, scroll_count):
-        self._safe_scroll(scroll_count, 'div', class_='tweet')
-
-        soup = self._soup()
-        tweets = soup.find_all('div', class_='tweet')
-        results = []
-        for tweet_item in tweets:
-            tweet = tweet_parser(tweet_item)
-            if not tweet:
-                break
-            results.append(tweet)
-
-        return results
-
-    def _safe_scroll(self, count, *args, **kwargs):
-        for i in range(int(count)):
-            self._scroll_to_bottom()
-
-            # 取得できるツイート数に変化があるまで待機
-            _prev_count = len(self._soup().find_all(*args, **kwargs))
-            WebDriverWait(self.driver, self.timeout).until_not(
-                lambda d: len(driver2soup(d).find_all(*args, **kwargs)) == _prev_count
-            )
-            if self.debug:
-                print('ウェイト通過')
+    def search(self, word, count=200):
+        if self.search_manager is None:
+            self._get(f'/search?q={word}', mobile=True)
+            self.search_manager = SearchManager(self.get_session())
+        tweets = self.search_manager.search(word, count)
+        return tweets
 
     def __del__(self):
         self.driver.close()
