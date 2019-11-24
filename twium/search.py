@@ -6,13 +6,6 @@ import requests
 
 from models import Tweet
 
-AUTHORIZATION = 'Bearer ' \
-                'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4pu' \
-                'Ts%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA'
-UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' \
-     'AppleWebKit/537.36 (KHTML, like Gecko) ' \
-     'Chrome/78.0.3904.108 Safari/537.36'
-
 MAX_SEARCH_COUNT = 100
 
 
@@ -21,16 +14,6 @@ class SearchManager:
         self.session = session
 
     def search(self, word, count=MAX_SEARCH_COUNT):
-        csrf_token = requests.utils.dict_from_cookiejar(self.session.cookies)['ct0']
-        self.session.headers.update({
-            'Authorization': AUTHORIZATION,
-            'User-Agent': UA,
-            'X-Twitter-Auth-Type': 'OAuth2Session',
-            'X-Twitter-Active-User': 'yes',
-            'Origin': 'https://twitter.com',
-            'X-CSRF-Token': csrf_token,
-        })
-
         result = []
         cursor = ''
         for i in range(math.ceil(count / MAX_SEARCH_COUNT)):
@@ -44,6 +27,7 @@ class SearchManager:
                 f"&q={word}"
                 f"&cursor={cursor}"
             )
+            response.raise_for_status()
             response_json = json.loads(response.text)
 
             last_timeline_content = response_json['timeline']['instructions'][0]['addEntries']['entries'][-1]['content']

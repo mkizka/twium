@@ -12,6 +12,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from search import SearchManager
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+AUTHORIZATION = 'Bearer ' \
+                'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4pu' \
+                'Ts%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA'
+UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' \
+     'AppleWebKit/537.36 (KHTML, like Gecko) ' \
+     'Chrome/78.0.3904.108 Safari/537.36'
 
 
 class AltApi:
@@ -104,9 +110,19 @@ class AltApi:
         self._query_selector(q=query, action=f'.value = {value}')
 
     def get_session(self):
-        session = requests.session()
+        session = requests.Session()
         for cookie in self.driver.get_cookies():
             session.cookies.set(cookie['name'], cookie['value'])
+
+        csrf_token = requests.utils.dict_from_cookiejar(session.cookies)['ct0']
+        session.headers.update({
+            'Authorization': AUTHORIZATION,
+            'User-Agent': UA,
+            'X-Twitter-Auth-Type': 'OAuth2Session',
+            'X-Twitter-Active-User': 'yes',
+            'Origin': 'https://twitter.com',
+            'X-CSRF-Token': csrf_token,
+        })
         return session
 
     def tweet(self, text, in_reply_to_status_id=None):
@@ -120,9 +136,12 @@ class AltApi:
         return int(re.findall(r'[0-9]+$', self.driver.current_url)[0])
 
     def del_tweet(self, tweet_id):
-        self._get(f'/-/status/{str(tweet_id)}')
-        self._click('.js-actionDelete button')
-        self._click('.delete-action')
+        session = self.get_session()
+        response = session.post(
+            'https://api.twitter.com/1.1/statuses/destroy.json',
+            {'tweet_mode': 'extended', 'id': tweet_id}
+        )
+        response.raise_for_status()
 
     def _get_user_intent(self, user_id=None, screen_name=None):
         url = '/intent/user?'
@@ -152,7 +171,6 @@ class AltApi:
 
     def search(self, word, count=200):
         if self.search_manager is None:
-            self._get(f'/search?q={word}', mobile=True)
             self.search_manager = SearchManager(self.get_session())
         tweets = self.search_manager.search(word, count)
         return tweets
