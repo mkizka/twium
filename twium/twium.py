@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from typing import Union, Callable
 from urllib import parse
 
 import requests
@@ -22,12 +23,12 @@ UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' \
 
 class AltApi:
     is_authenticated = False
-    search_manager: SearchManager = None
+    session: requests.Session = None
 
     BASE_URL = 'https://twitter.com'
     BASE_MOBILE_URL = 'https://mobile.twitter.com'
 
-    def __init__(self, timeout=10, debug=False):
+    def __init__(self, timeout: int = 10, debug: bool = False):
         self.debug = debug
         self.timeout = timeout
 
@@ -43,7 +44,7 @@ class AltApi:
             log_path = os.path.devnull
         self.driver = webdriver.Chrome(options=options, service_log_path=log_path)
 
-    def _is_authenticated(self):
+    def _is_authenticated(self) -> bool:
         self._get('/', mobile=True)
 
         try:
@@ -52,9 +53,10 @@ class AltApi:
         except:
             self.is_authenticated = False
 
+        self.session = self._get_session()
         return self.is_authenticated
 
-    def auth(self, username, password):
+    def auth(self, username: str, password: str):
         self._get('/login', mobile=True)
         self._wait((By.NAME, 'session[username_or_email]'))
 
@@ -65,7 +67,7 @@ class AltApi:
         if not self._is_authenticated():
             raise Exception('ログイン失敗')
 
-    def load_cookies(self, filepath):
+    def load_cookies(self, filepath: str):
         self._get('/', mobile=True)
 
         with open(filepath, 'r') as f:
@@ -79,37 +81,37 @@ class AltApi:
         if not self._is_authenticated():
             raise Exception('ログイン失敗')
 
-    def write_cookies(self, filepath):
+    def write_cookies(self, filepath: str):
         cookies = self.driver.get_cookies()
         with open(filepath, 'w') as f:
             json.dump({'cookies': cookies}, f)
 
-    def _get(self, path, mobile=False):
+    def _get(self, path: str, mobile=False):
         if mobile:
             url = self.BASE_MOBILE_URL + path
         else:
             url = self.BASE_URL + path
         return self.driver.get(url)
 
-    def _wait(self, condition):
+    def _wait(self, condition: Union[tuple, Callable]):
         if type(condition) is tuple:
             condition = EC.visibility_of_element_located(condition)
         WebDriverWait(self.driver, self.timeout).until(condition)
 
-    def _query_selector(self, q, action):
+    def _query_selector(self, q: str, action: str):
         self._wait((By.CSS_SELECTOR, q))
         self.driver.execute_script(f"document.querySelector('{q}'){action}")
 
-    def _click(self, query):
+    def _click(self, query: str):
         self._query_selector(q=query, action='.click()')
 
-    def _submit(self, query):
+    def _submit(self, query: str):
         self._query_selector(q=query, action='.submit()')
 
-    def _input(self, query, value):
+    def _input(self, query: str, value: str):
         self._query_selector(q=query, action=f'.value = {value}')
 
-    def get_session(self):
+    def _get_session(self) -> requests.Session:
         session = requests.Session()
         for cookie in self.driver.get_cookies():
             session.cookies.set(cookie['name'], cookie['value'])
@@ -125,7 +127,7 @@ class AltApi:
         })
         return session
 
-    def tweet(self, text, in_reply_to_status_id=None):
+    def tweet(self, text: str, in_reply_to_status_id=None) -> int:
         tweet_text = parse.quote(text)
         url = f'/intent/tweet?text={tweet_text}'
         if in_reply_to_status_id is not None:
@@ -135,15 +137,15 @@ class AltApi:
         # ツイートされたIDを返す
         return int(re.findall(r'[0-9]+$', self.driver.current_url)[0])
 
-    def del_tweet(self, tweet_id):
-        session = self.get_session()
+    def del_tweet(self, tweet_id: int):
+        session = self._get_session()
         response = session.post(
             'https://api.twitter.com/1.1/statuses/destroy.json',
             {'tweet_mode': 'extended', 'id': tweet_id}
         )
         response.raise_for_status()
 
-    def _get_user_intent(self, user_id=None, screen_name=None):
+    def _get_user_intent(self, user_id: int = None, screen_name: str = None):
         url = '/intent/user?'
         if user_id:
             url += f'user_id={str(user_id)}'
@@ -153,26 +155,24 @@ class AltApi:
             return
         self._get(url)
 
-    def follow(self, user_id=None, screen_name=None):
+    def follow(self, user_id: int = None, screen_name: str = None):
         self._get_user_intent(user_id, screen_name)
         self._submit('form.follow')
 
-    def unfollow(self, user_id=None, screen_name=None):
+    def unfollow(self, user_id: int = None, screen_name: str = None):
         self._get_user_intent(user_id, screen_name)
         self._submit('form.unfollow')
 
-    def favorite(self, tweet_id):
+    def favorite(self, tweet_id: int):
         self._get(f'/intent/favorite?tweet_id={str(tweet_id)}')
         self._submit('#favorite_btn_form')
 
-    def retweet(self, tweet_id):
+    def retweet(self, tweet_id: int):
         self._get(f'/intent/retweet?tweet_id={str(tweet_id)}')
         self._submit('#retweet_btn_form')
 
-    def search(self, word, count=200):
-        if self.search_manager is None:
-            self.search_manager = SearchManager(self.get_session())
-        tweets = self.search_manager.search(word, count)
+    def search(self, word: str, count: int = 200):
+        tweets = SearchManager(self.session).search(word, count)
         return tweets
 
     def __del__(self):
