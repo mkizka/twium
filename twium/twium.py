@@ -1,6 +1,8 @@
 import json
+import math
 import os
 import re
+import time
 from typing import Union, Callable
 from urllib import parse
 
@@ -10,9 +12,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from search import SearchManager
+from models import Tweet
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MAX_SEARCH_COUNT = 200
 AUTHORIZATION = 'Bearer ' \
                 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4pu' \
                 'Ts%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA'
@@ -138,8 +141,7 @@ class AltApi:
         return int(re.findall(r'[0-9]+$', self.driver.current_url)[0])
 
     def del_tweet(self, tweet_id: int):
-        session = self._get_session()
-        response = session.post(
+        response = self.session.post(
             'https://api.twitter.com/1.1/statuses/destroy.json',
             {'tweet_mode': 'extended', 'id': tweet_id}
         )
@@ -172,8 +174,31 @@ class AltApi:
         self._submit('#retweet_btn_form')
 
     def search(self, word: str, count: int = 200):
-        tweets = SearchManager(self.session).search(word, count)
-        return tweets
+        result = []
+        cursor = ''
+        for i in range(math.ceil(count / MAX_SEARCH_COUNT)):
+            response = self.session.get(
+                f"https://api.twitter.com/2/search/adaptive.json"
+                f"?include_want_retweets=1"
+                f"&include_ext_alt_text=true"
+                f"&count={count if count < MAX_SEARCH_COUNT else MAX_SEARCH_COUNT}"
+                f"&query_source=typed_query"
+                f"&tweet_search_mode=live"
+                f"&q={word}"
+                f"&cursor={cursor}"
+            )
+            response.raise_for_status()
+            response_json = json.loads(response.text)
+
+            last_timeline_content = response_json['timeline']['instructions'][0]['addEntries']['entries'][-1]['content']
+            if 'operation' in last_timeline_content.keys():
+                cursor = last_timeline_content['operation']['cursor']['value']
+
+            count -= MAX_SEARCH_COUNT
+            result += list(map(lambda j: Tweet(j), response_json['globalObjects']['tweets'].values()))
+
+            time.sleep(1)
+        return sorted(result, key=lambda tweet: tweet.created_at, reverse=True)
 
     def __del__(self):
         self.driver.close()
