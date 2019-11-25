@@ -31,13 +31,15 @@ class AltApi:
     BASE_URL = 'https://twitter.com'
     BASE_MOBILE_URL = 'https://mobile.twitter.com'
 
-    def __init__(self, timeout: int = 10, debug: bool = False):
+    def __init__(self, timeout: int = 10, debug: bool = False, driver_options: dict = None):
         self.debug = debug
         self.timeout = timeout
 
-        self._start()
+        if driver_options is None:
+            driver_options = {}
+        self._start(driver_options)
 
-    def _start(self):
+    def _start(self, driver_options: dict):
         options = webdriver.ChromeOptions()
         if not self.debug:
             options.add_argument('--headless')
@@ -45,7 +47,7 @@ class AltApi:
         log_path = None
         if not self.debug:
             log_path = os.path.devnull
-        self.driver = webdriver.Chrome(options=options, service_log_path=log_path)
+        self.driver = webdriver.Chrome(options=options, service_log_path=log_path, **driver_options)
 
     def _is_authenticated(self) -> bool:
         self._get('/', mobile=True)
