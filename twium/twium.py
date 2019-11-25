@@ -11,6 +11,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.remote.webdriver import WebDriver
 
 from twium.models import Tweet
 
@@ -31,15 +32,16 @@ class AltApi:
     BASE_URL = 'https://twitter.com'
     BASE_MOBILE_URL = 'https://mobile.twitter.com'
 
-    def __init__(self, timeout: int = 10, debug: bool = False, driver_options: dict = None):
+    def __init__(self, timeout: int = 10, debug: bool = False, driver: WebDriver = None):
         self.debug = debug
         self.timeout = timeout
 
-        if driver_options is None:
-            driver_options = {}
-        self._start(driver_options)
+        if driver is None:
+            self.driver = self._create_driver()
+        else:
+            self.driver = driver
 
-    def _start(self, driver_options: dict):
+    def _create_driver(self) -> WebDriver:
         options = webdriver.ChromeOptions()
         if not self.debug:
             options.add_argument('--headless')
@@ -47,7 +49,8 @@ class AltApi:
         log_path = None
         if not self.debug:
             log_path = os.path.devnull
-        self.driver = webdriver.Chrome(options=options, service_log_path=log_path, **driver_options)
+
+        return webdriver.Chrome(options=options, service_log_path=log_path)
 
     def _is_authenticated(self) -> bool:
         self._get('/', mobile=True)
