@@ -9,9 +9,9 @@ from urllib import parse
 import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.remote.webdriver import WebDriver
 
 from twium.models import Tweet
 
@@ -178,20 +178,43 @@ class AltApi:
         self._get(f'/intent/retweet?tweet_id={str(tweet_id)}')
         self._submit('#retweet_btn_form')
 
-    def search(self, word: str, count: int = 200):
+    def search(self, word: str, count: int = MAX_SEARCH_COUNT):
         result = []
         cursor = ''
         for i in range(math.ceil(count / MAX_SEARCH_COUNT)):
-            response = self.session.get(
-                f"https://api.twitter.com/2/search/adaptive.json"
-                f"?include_want_retweets=1"
-                f"&include_ext_alt_text=true"
-                f"&count={count if count < MAX_SEARCH_COUNT else MAX_SEARCH_COUNT}"
-                f"&query_source=typed_query"
-                f"&tweet_search_mode=live"
-                f"&q={word}"
-                f"&cursor={cursor}"
-            )
+            url = 'https://api.twitter.com/2/search/adaptive.json?'
+            url += parse.urlencode({
+                'tweet_search_mode': 'live',
+                'cursor': cursor,
+                'include_profile_interstitial_type': 1,
+                'include_blocking': 1,
+                'include_blocked_by': 1,
+                'include_followed_by': 1,
+                'include_want_retweets': 1,
+                'include_mute_edge': 1,
+                'include_can_dm': 1,
+                'include_can_media_tag': 1,
+                'skip_status': 1,
+                'cards_platform': 'Web-12',
+                'include_cards': 1,
+                'include_composer_source': 'true',
+                'include_ext_alt_text': 'true',
+                'include_reply_count': 1,
+                'tweet_mode': 'extended',
+                'include_entities': 'true',
+                'include_user_entities': 'true',
+                'include_ext_media_color': 'true',
+                'include_ext_media_availability': 'true',
+                'send_error_codes': 'true',
+                'simple_quoted_tweets': 'true',
+                'q': word,
+                'count': count if count < MAX_SEARCH_COUNT else MAX_SEARCH_COUNT,
+                'query_source': 'typed_query',
+                'pc': 1,
+                'spelling_corrections': 1,
+                'ext': 'mediaStats, highlightedLabel, cameraMoment',
+            })
+            response = self.session.get(url)
             response.raise_for_status()
             response_json = json.loads(response.text)
 
